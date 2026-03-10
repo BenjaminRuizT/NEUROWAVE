@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroWave AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#03060d; --bg1:#07101f; --bg2:#0a1628; --border:#0e2040;
+  --cyan:#00e5ff; --blue:#2979ff; --purple:#9c27b0; --green:#00e676;
+  --amber:#ffd740; --red:#ff5252; --text:#cce4f6; --muted:#1e3a5a; --muted2:#2a5580;
+  --dc:#9c6dff; --tc:#4d9fff; --ac:#00d4f0; --bc:#00e676; --gc:#ffd740;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,229,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.018) 1px,transparent 1px);
+  background-size:44px 44px;pointer-events:none}
+body::after{content:'';position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(41,121,255,.08),transparent);pointer-events:none}
+
+/* OVERLAY */
+#overlay{position:fixed;inset:0;z-index:9999;background:rgba(3,6,13,.97);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;backdrop-filter:blur(8px)}
+.ov-logo{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;letter-spacing:6px;color:var(--text)}
+.ov-logo span{color:var(--cyan)}
+.ov-sub{color:var(--muted2);font-size:12px;letter-spacing:1.5px;text-align:center;max-width:380px;line-height:2.2}
+.ov-sub strong{color:var(--green)}
+.ov-btn{padding:16px 56px;background:linear-gradient(135deg,var(--cyan),var(--blue));border:none;border-radius:6px;
+  font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:3px;
+  color:#03060d;cursor:pointer;transition:.2s}
+.ov-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,229,255,.3)}
+
+/* LAYOUT */
+#app{position:relative;z-index:1;max-width:1440px;margin:0 auto;padding:16px 20px 40px}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 0 18px;
+  border-bottom:1px solid var(--border);margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.logo{font-family:'Orbitron',monospace;font-size:20px;font-weight:900;letter-spacing:4px}
+.logo span{color:var(--cyan)}
+.header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.nav-tabs{display:flex;gap:2px;background:var(--bg1);border:1px solid var(--border);border-radius:8px;padding:3px}
+.tab{padding:6px 14px;border:none;background:transparent;color:var(--muted2);font-family:'IBM Plex Mono',monospace;
+  font-size:11px;letter-spacing:1.5px;cursor:pointer;border-radius:5px;transition:.2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--bg2);color:var(--cyan);border:1px solid var(--border)}
+.ws-pill{display:flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--border);
+  border-radius:20px;font-size:10px;letter-spacing:1.5px;color:var(--muted2)}
+.wdot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.wdot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.wdot.wait{background:var(--amber);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* GRIDS */
+.g3{display:grid;grid-template-columns:290px 1fr 265px;gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+@media(max-width:1100px){.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:680px){.g3,.g2,.g21{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:0}
+.ctitle{font-family:'Orbitron',monospace;font-size:9px;font-weight:600;letter-spacing:3px;
+  color:var(--muted2);text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px}
+.ctitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* RING */
+.state-wrap{display:flex;align-items:center;gap:14px;padding:4px 0 14px}
+#ring-canvas{flex-shrink:0}
+#state-name{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;letter-spacing:3px;
+  color:var(--ac);transition:color .8s;line-height:1;margin-bottom:5px}
+#state-sub{font-size:10px;color:var(--muted2);letter-spacing:.5px;line-height:1.9}
+
+/* METRICS */
+.metric{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.mlbl{font-size:10px;color:var(--muted2);letter-spacing:.3px;width:68px;text-transform:uppercase}
+.mbar-w{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.mbar{height:100%;border-radius:2px;transition:width .9s cubic-bezier(.4,0,.2,1)}
+#ms{background:linear-gradient(90deg,var(--blue),var(--red))}
+#mf{background:linear-gradient(90deg,var(--cyan),var(--green))}
+#mm{background:linear-gradient(90deg,var(--tc),var(--ac))}
+.mval{font-size:10px;color:var(--text);width:28px;text-align:right}
+
+/* MODES */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mbtn{background:transparent;border:1px solid var(--border);border-radius:8px;
+  padding:11px 9px 9px;color:var(--muted2);font-family:'IBM Plex Mono',monospace;
+  font-size:11px;cursor:pointer;transition:.2s;text-align:left;line-height:1.5}
+.mbtn:hover{border-color:var(--cyan);color:var(--text);background:rgba(0,229,255,.03)}
+.mbtn.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.05)}
+.mi{font-size:18px;display:block;margin-bottom:3px}
+.mn{display:block;font-size:11px}
+.mhz{display:block;font-size:9px;color:var(--muted);margin-top:2px}
+.mbtn.active .mhz{color:var(--cyan);opacity:.65}
+
+/* SESSION BTN */
+#sess-btn{width:100%;padding:12px;margin-top:8px;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  border:none;border-radius:7px;color:#fff;
+  font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
+  letter-spacing:2px;cursor:pointer;transition:.2s}
+#sess-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+#sess-btn.stop{background:linear-gradient(135deg,#c62828,#880e4f)}
+
+/* SLIDERS */
+.slrow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sllbl{font-size:11px;color:var(--muted2);width:90px;flex-shrink:0;letter-spacing:.2px}
+.sllbl.b{color:var(--text)}
+input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;cursor:pointer;transition:.15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.4)}
+.rc::-webkit-slider-thumb{background:var(--cyan)}
+.rb::-webkit-slider-thumb{background:var(--blue)}
+.rp::-webkit-slider-thumb{background:var(--purple)}
+.rg::-webkit-slider-thumb{background:var(--green)}
+.ra::-webkit-slider-thumb{background:var(--amber)}
+.rw::-webkit-slider-thumb{background:#e0f0ff}
+.sv{font-size:11px;color:var(--text);width:38px;text-align:right;flex-shrink:0}
+
+/* TOGGLE */
+.trow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.tlbl{font-size:11px;color:var(--muted2);letter-spacing:.2px}
+.tog{position:relative;width:34px;height:18px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-t{position:absolute;inset:0;background:var(--border);border-radius:9px;transition:.2s}
+.tog input:checked~.tog-t{background:var(--cyan)}
+.tog-k{position:absolute;top:3px;left:3px;width:12px;height:12px;background:#fff;border-radius:50%;transition:.2s}
+.tog input:checked~.tog-k{transform:translateX(16px)}
+
+/* PILLS */
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.pill{padding:5px 12px;border:1px solid var(--border);border-radius:20px;
+  font-size:10px;color:var(--muted2);cursor:pointer;transition:.2s;background:transparent;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:.3px}
+.pill:hover{border-color:var(--cyan);color:var(--text)}
+.pill.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.06)}
+
+/* DIVIDER */
+.sdiv{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;
+  margin:14px 0 10px;display:flex;align-items:center;gap:8px}
+.sdiv::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* WAVE TYPES */
+.wtypes{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px}
+.wtype{padding:8px 4px;border:1px solid var(--border);border-radius:6px;
+  background:transparent;color:var(--muted2);font-family:'IBM Plex Mono',monospace;
+  font-size:10px;cursor:pointer;text-align:center;transition:.2s;letter-spacing:.3px}
+.wtype:hover{border-color:var(--cyan);color:var(--text)}
+.wtype.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.05)}
+
+/* MASTER BOX */
+.masterbox{padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:12px}
+
+/* BAND LABELS */
+#viz-canvas{width:100%;height:140px;display:block;border-radius:6px}
+.blabels{display:flex;justify-content:space-around;margin-top:8px}
+.bl{font-size:10px;text-align:center;opacity:.4;transition:opacity .5s}
+.bl.dom{opacity:1}
+.bl-n{display:block;letter-spacing:.5px}
+.bl-v{display:block;font-size:9px;color:var(--muted2);margin-top:2px}
+
+/* FREQ CARDS */
+.fcards{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+.fcard{text-align:center;padding:10px 4px;border:1px solid var(--border);border-radius:8px;background:var(--bg);transition:.3s}
+.fcard.dom{border-color:currentColor;background:rgba(255,255,255,.02)}
+.fc-n{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:2px;display:block}
+.fc-h{font-size:17px;font-weight:500;display:block;margin:4px 0}
+.fc-r{font-size:9px;color:var(--muted2);display:block}
+
+/* STATUS BAR */
+.sbar{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;background:var(--bg1);border:1px solid var(--border);
+  border-radius:7px;margin-top:14px;flex-wrap:wrap;gap:8px}
+.sbi{font-size:10px;color:var(--muted2);letter-spacing:.3px}
+.sbi span{color:var(--text)}
+.sbi.live span{color:var(--green)}
+
+/* HISTORY */
+.hrow{display:flex;align-items:center;gap:12px;padding:10px 14px;
+  border:1px solid var(--border);border-radius:8px;margin-bottom:7px;background:var(--bg1)}
+.hmode{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--cyan);width:70px;flex-shrink:0}
+.hstat{font-size:11px;color:var(--muted2);flex:1}
+.hstat span{color:var(--text)}
+.hdur{font-size:11px;color:var(--muted2);flex-shrink:0}
+
+/* INFO BOX */
+.ibox{padding:11px 13px;background:rgba(0,229,255,.025);border:1px solid rgba(0,229,255,.1);
+  border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.9;margin-bottom:9px}
+.ibox strong{color:var(--cyan);font-weight:500}
+
+/* AI ACTION */
+#ai-log{margin-top:8px;font-size:10px;color:var(--muted2);min-height:28px;line-height:1.9;
+  padding:8px;background:var(--bg);border-radius:5px;border:1px solid var(--border)}
+
+/* SESSION TIMER */
+#timer-big{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;
+  color:var(--cyan);letter-spacing:2px;text-align:center;padding:18px 0 4px}
+
+/* NOTIF */
+#notif{position:fixed;bottom:20px;right:20px;z-index:9000;padding:10px 18px;
+  background:var(--bg1);border:1px solid var(--cyan);border-radius:7px;
+  font-size:11px;color:var(--cyan);letter-spacing:.5px;
+  transform:translateY(60px);opacity:0;transition:.3s;pointer-events:none}
+#notif.show{transform:translateY(0);opacity:1}
+
+/* SCROLL */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ── INIT OVERLAY ─────────────────────── -->
+<div id="overlay">
+  <div class="ov-logo">Neuro<span>Wave</span> AI</div>
+  <div class="ov-sub">
+    Sistema profesional de neuroacústica con IA adaptativa.<br>
+    <strong>Ningún sonido se reproduce automáticamente.</strong><br>
+    Activa cada elemento de forma independiente.
+  </div>
+  <button class="ov-btn" onclick="boot()">▶ INICIAR SISTEMA</button>
+</div>
+
+<div id="app">
+<header>
+  <div class="logo">Neuro<span>Wave</span> AI</div>
+  <div class="header-right">
+    <div class="nav-tabs">
+      <button class="tab active" onclick="showP('main',this)">AUDIO</button>
+      <button class="tab" onclick="showP('music',this)">MÚSICA</button>
+      <button class="tab" onclick="showP('eeg',this)">EEG</button>
+      <button class="tab" onclick="showP('sessions',this)">SESIONES</button>
+      <button class="tab" onclick="showP('info',this)">CIENCIA</button>
+    </div>
+    <div class="ws-pill"><div class="wdot wait" id="wdot"></div><span id="wlbl">CONECTANDO</span></div>
+  </div>
+</header>
+
+<!-- ════════════════════════════════════════
+     PANEL AUDIO
+════════════════════════════════════════ -->
+<div id="panel-main" class="panel active">
+<div class="g3">
+
+<!-- COL 1 -->
+<div style="display:flex;flex-direction:column;gap:14px">
+  <div class="card">
+    <div class="ctitle">Estado Cognitivo</div>
+    <div class="state-wrap">
+      <canvas id="ring-canvas" width="72" height="72"></canvas>
+      <div>
+        <div id="state-name">ALPHA</div>
+        <div id="state-sub">10.0 Hz · 200 Hz carrier<br>Relajado · Enfocado</div>
+      </div>
+    </div>
+    <div class="metric"><div class="mlbl">Estrés</div>
+      <div class="mbar-w"><div class="mbar" id="ms" style="width:20%"></div></div>
+      <div class="mval" id="vs">20%</div></div>
+    <div class="metric"><div class="mlbl">Enfoque</div>
+      <div class="mbar-w"><div class="mbar" id="mf" style="width:50%"></div></div>
+      <div class="mval" id="vf">50%</div></div>
+    <div class="metric"><div class="mlbl">Meditación</div>
+      <div class="mbar-w"><div class="mbar" id="mm" style="width:40%"></div></div>
+      <div class="mval" id="vm">40%</div></div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Modo Cognitivo</div>
+    <div class="mgrid">
+      <button class="mbtn" data-mode="sleep"><span class="mi">💤</span><span class="mn">Dormir</span><span class="mhz">δ 2.0 Hz</span></button>
+      <button class="mbtn" data-mode="meditate"><span class="mi">🧘</span><span class="mn">Meditar</span><span class="mhz">θ 6.0 Hz</span></button>
+      <button class="mbtn active" data-mode="study"><span class="mi">📚</span><span class="mn">Estudiar</span><span class="mhz">α 10.0 Hz</span></button>
+      <button class="mbtn" data-mode="focus"><span class="mi">🎯</span><span class="mn">Enfoque</span><span class="mhz">β 18.0 Hz</span></button>
+      <button class="mbtn" data-mode="flow"><span class="mi">⚡</span><span class="mn">Flow/Gamma</span><span class="mhz">γ 40.0 Hz</span></button>
+      <button class="mbtn" data-mode="custom"><span class="mi">🎛</span><span class="mn">Manual</span><span class="mhz">custom</span></button>
+    </div>
+    <button id="sess-btn" onclick="toggleSession()">▶ INICIAR SESIÓN</button>
+  </div>
+</div>
+
+<!-- COL 2 -->
+<div style="display:flex;flex-direction:column;gap:14px">
+  <div class="card">
+    <div class="ctitle">Control Maestro</div>
+    <div class="masterbox">
+      <div class="slrow">
+        <span class="sllbl b">🔊 Master</span>
+        <input type="range" class="rc" id="sl-master" min="0" max="1" step="0.01" value="0.7"
+          oninput="AE.setMaster(+this.value);q('#sv-master').textContent=pct(this.value)">
+        <span class="sv" id="sv-master">70%</span>
+      </div>
+    </div>
+
+    <div class="sdiv">Binaural Beats</div>
+    <div class="trow">
+      <label class="tog"><input type="checkbox" id="tog-bb" onchange="AE.toggleBB(this.checked)">
+        <div class="tog-t"></div><div class="tog-k"></div></label>
+      <span class="tlbl" id="lbl-bb">Desactivado — sube el toggle para activar</span>
+    </div>
+    <div id="bb-panel" style="opacity:.35;pointer-events:none;transition:.3s">
+      <div class="slrow">
+        <span class="sllbl">Volumen</span>
+        <input type="range" class="rc" id="sl-bbvol" min="0" max="1" step="0.01" value="0.35"
+          oninput="AE.setBBVol(+this.value);this.nextElementSibling.textContent=pct(this.value)">
+        <span class="sv">35%</span>
+      </div>
+      <div class="slrow">
+        <span class="sllbl">Carrier Hz</span>
+        <input type="range" class="rb" id="sl-carrier" min="80" max="500" step="1" value="200"
+          oninput="AE.setCarrier(+this.value);this.nextElementSibling.textContent=this.value+'Hz';sbUpdate()">
+        <span class="sv">200Hz</span>
+      </div>
+      <div class="slrow">
+        <span class="sllbl">Beat Hz</span>
+        <input type="range" class="rp" id="sl-beat" min="0.5" max="80" step="0.5" value="10"
+          oninput="AE.setBeat(+this.value);this.nextElementSibling.textContent=this.value+'Hz';sbUpdate()">
+        <span class="sv">10Hz</span>
+      </div>
+      <div class="sdiv">Forma de onda</div>
+      <div class="wtypes">
+        <button class="wtype active" onclick="AE.setWave('sine',this)">Sine</button>
+        <button class="wtype" onclick="AE.setWave('triangle',this)">Triangle</button>
+        <button class="wtype" onclick="AE.setWave('square',this)">Square</button>
+        <button class="wtype" onclick="AE.setWave('sawtooth',this)">Sawtooth</button>
+      </div>
+    </div>
+
+    <div class="sdiv">Afinación del Sistema</div>
+    <div class="pills">
+      <button class="pill active" onclick="AE.setTuning(432,this)">432 Hz</button>
+      <button class="pill" onclick="AE.setTuning(440,this)">440 Hz</button>
+      <button class="pill" onclick="AE.setTuning(528,this)">528 Hz</button>
+      <button class="pill" onclick="AE.setTuning(396,this)">396 Hz</button>
+      <button class="pill" onclick="customTuning(this)">Personalizada</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Sonidos Ambientales</div>
+    <p style="font-size:10px;color:var(--muted2);margin-bottom:12px;line-height:1.9">
+      Todos inician en 0. Sube cada slider de forma independiente para activarlo.</p>
+    <div class="slrow"><span class="sllbl">🌧 Lluvia</span>
+      <input type="range" class="rb" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('rain',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">🌊 Mar</span>
+      <input type="range" class="rb" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('ocean',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">🌿 Bosque</span>
+      <input type="range" class="rg" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('forest',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">🔥 Fogata</span>
+      <input type="range" class="ra" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('fire',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">⬜ Ruido Blanco</span>
+      <input type="range" class="rw" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('white',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">🌸 Ruido Rosa</span>
+      <input type="range" class="rp" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('pink',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">🟫 Ruido Café</span>
+      <input type="range" class="ra" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('brown',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+    <div class="slrow"><span class="sllbl">🌀 Cosmos</span>
+      <input type="range" class="rp" min="0" max="1" step="0.01" value="0"
+        oninput="AE.setAmb('cosmos',+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">0%</span></div>
+  </div>
+</div>
+
+<!-- COL 3 -->
+<div style="display:flex;flex-direction:column;gap:14px">
+  <div class="card">
+    <div class="ctitle">Ondas Cerebrales EEG</div>
+    <canvas id="viz-canvas"></canvas>
+    <div class="blabels">
+      <div class="bl" id="bl-delta" style="color:var(--dc)"><span class="bl-n">δ DELTA</span><span class="bl-v" id="bv-delta">0.08</span></div>
+      <div class="bl" id="bl-theta" style="color:var(--tc)"><span class="bl-n">θ THETA</span><span class="bl-v" id="bv-theta">0.15</span></div>
+      <div class="bl dom" id="bl-alpha" style="color:var(--ac)"><span class="bl-n">α ALPHA</span><span class="bl-v" id="bv-alpha">0.55</span></div>
+      <div class="bl" id="bl-beta" style="color:var(--bc)"><span class="bl-n">β BETA</span><span class="bl-v" id="bv-beta">0.18</span></div>
+      <div class="bl" id="bl-gamma" style="color:var(--gc)"><span class="bl-n">γ GAMMA</span><span class="bl-v" id="bv-gamma">0.04</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Conversión 432 Hz</div>
+    <div class="trow">
+      <label class="tog"><input type="checkbox" id="tog-conv" onchange="AE.toggleConv(this.checked)">
+        <div class="tog-t"></div><div class="tog-k"></div></label>
+      <span class="tlbl">Activar conversión de frecuencias</span>
+    </div>
+    <p style="font-size:10px;color:var(--muted2);line-height:1.8;margin:4px 0 10px">
+      Ajusta el ratio de todas las frecuencias generadas.<br>Ratio: 432/440 = 0.9818</p>
+    <div class="slrow">
+      <span class="sllbl">Intensidad</span>
+      <input type="range" class="rc" min="0" max="1" step="0.01" value="1"
+        oninput="AE.setConvAmt(+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">100%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">IA Adaptativa</div>
+    <div class="trow">
+      <label class="tog"><input type="checkbox" id="tog-ai" checked onchange="AI.toggle(this.checked)">
+        <div class="tog-t"></div><div class="tog-k"></div></label>
+      <span class="tlbl">Adaptar audio automáticamente</span>
+    </div>
+    <div class="slrow">
+      <span class="sllbl">Velocidad</span>
+      <input type="range" class="rc" min="0.1" max="1" step="0.05" value="0.3"
+        oninput="AI.speed=+this.value;this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">30%</span>
+    </div>
+    <div id="ai-log">Esperando datos EEG...</div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Música Generativa</div>
+    <div class="trow">
+      <label class="tog"><input type="checkbox" id="tog-music" onchange="MG.toggle(this.checked)">
+        <div class="tog-t"></div><div class="tog-k"></div></label>
+      <span class="tlbl">Activar música neuroadaptativa</span>
+    </div>
+    <div class="slrow">
+      <span class="sllbl">Volumen</span>
+      <input type="range" class="rc" min="0" max="1" step="0.01" value="0.35"
+        oninput="MG.setVol(+this.value);this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">35%</span>
+    </div>
+    <div class="slrow">
+      <span class="sllbl">Brillo</span>
+      <input type="range" class="ra" min="200" max="8000" step="100" value="2000"
+        oninput="MG.setFilter(+this.value);this.nextElementSibling.textContent=Math.round(this.value)+'Hz'">
+      <span class="sv">2kHz</span>
+    </div>
+  </div>
+</div>
+</div><!-- /g3 -->
+
+<div class="sbar">
+  <div class="sbi">Modo: <span id="sb-mode">Estudiar</span></div>
+  <div class="sbi">Beat: <span id="sb-beat">10.0 Hz</span></div>
+  <div class="sbi">Carrier: <span id="sb-car">200 Hz</span></div>
+  <div class="sbi">Afinación: <span id="sb-tun">432 Hz</span></div>
+  <div class="sbi">Sesión: <span id="sb-sess">—</span></div>
+  <div class="sbi live">EEG: <span id="sb-eeg">SIMULADOR</span></div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PANEL MÚSICA
+════════════════════════════════════════ -->
+<div id="panel-music" class="panel">
+<div class="g2" style="margin-bottom:14px">
+  <div class="card">
+    <div class="ctitle">Motor Neuroadaptativo</div>
+    <div class="ibox">Genera música ambiental infinita sincronizada con tu estado cerebral. Inspirado en <strong>Brain.fm</strong> y <strong>Endel</strong> — completamente original y generativo.</div>
+    <div class="trow">
+      <label class="tog"><input type="checkbox" onchange="MG.toggle(this.checked)">
+        <div class="tog-t"></div><div class="tog-k"></div></label>
+      <span class="tlbl">Activar generador</span>
+    </div>
+    <div class="sdiv">Capas Activas</div>
+    <div class="trow"><label class="tog"><input type="checkbox" id="lay-drone" checked onchange="MG.layer('drone',this.checked)"><div class="tog-t"></div><div class="tog-k"></div></label><span class="tlbl">Drone — tonos sostenidos base</span></div>
+    <div class="trow"><label class="tog"><input type="checkbox" id="lay-pad" checked onchange="MG.layer('pad',this.checked)"><div class="tog-t"></div><div class="tog-k"></div></label><span class="tlbl">Pads — acordes suaves evolutivos</span></div>
+    <div class="trow"><label class="tog"><input type="checkbox" id="lay-arp" checked onchange="MG.layer('arp',this.checked)"><div class="tog-t"></div><div class="tog-k"></div></label><span class="tlbl">Arpegios — melodía sincronizada</span></div>
+    <div class="sdiv">Escala Musical</div>
+    <div class="pills">
+      <button class="pill active" onclick="MG.setScale('lydian',this)">Lydian</button>
+      <button class="pill" onclick="MG.setScale('dorian',this)">Dorian</button>
+      <button class="pill" onclick="MG.setScale('pentatonic',this)">Pentatónica</button>
+      <button class="pill" onclick="MG.setScale('wholetone',this)">Whole Tone</button>
+      <button class="pill" onclick="MG.setScale('minor',this)">Menor</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Parámetros de Composición</div>
+    <div class="slrow"><span class="sllbl">Tempo (BPM)</span>
+      <input type="range" class="rb" id="sl-bpm" min="30" max="120" step="1" value="70"
+        oninput="MG.bpm=+this.value;this.nextElementSibling.textContent=this.value">
+      <span class="sv">70</span></div>
+    <div class="slrow"><span class="sllbl">Tono raíz</span>
+      <input type="range" class="rp" min="60" max="300" step="1" value="130"
+        oninput="MG.setRoot(+this.value);this.nextElementSibling.textContent=Math.round(this.value)+'Hz'">
+      <span class="sv">130Hz</span></div>
+    <div class="slrow"><span class="sllbl">Brillo</span>
+      <input type="range" class="ra" min="200" max="8000" step="100" value="2000"
+        oninput="MG.setFilter(+this.value);this.nextElementSibling.textContent=Math.round(this.value)+'Hz'">
+      <span class="sv">2kHz</span></div>
+    <div class="slrow"><span class="sllbl">Complejidad</span>
+      <input type="range" class="rg" min="0" max="1" step="0.1" value="0.5"
+        oninput="MG.complexity=+this.value;this.nextElementSibling.textContent=pct(this.value)">
+      <span class="sv">50%</span></div>
+    <div class="sdiv">Visualización</div>
+    <canvas id="music-canvas" style="width:100%;height:80px;display:block;border-radius:6px"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ctitle">Frecuencias Activas por Banda</div>
+  <div class="fcards">
+    <div class="fcard" id="fc-delta" style="color:var(--dc)"><span class="fc-n">DELTA</span><span class="fc-h">2.0 Hz</span><span class="fc-r">0.5–4 Hz</span></div>
+    <div class="fcard" id="fc-theta" style="color:var(--tc)"><span class="fc-n">THETA</span><span class="fc-h">6.0 Hz</span><span class="fc-r">4–8 Hz</span></div>
+    <div class="fcard dom" id="fc-alpha" style="color:var(--ac)"><span class="fc-n">ALPHA</span><span class="fc-h">10.0 Hz</span><span class="fc-r">8–12 Hz</span></div>
+    <div class="fcard" id="fc-beta"  style="color:var(--bc)"><span class="fc-n">BETA</span><span class="fc-h">18.0 Hz</span><span class="fc-r">12–30 Hz</span></div>
+    <div class="fcard" id="fc-gamma" style="color:var(--gc)"><span class="fc-n">GAMMA</span><span class="fc-h">40.0 Hz</span><span class="fc-r">30–80 Hz</span></div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PANEL EEG
+════════════════════════════════════════ -->
+<div id="panel-eeg" class="panel">
+<div class="g2">
+  <div class="card">
+    <div class="ctitle">Simulador EEG</div>
+    <div class="ibox">Simula estados cerebrales con transición realista. Sin hardware, el simulador genera señales de alta fidelidad basadas en distribuciones de bandas neurofisiológicas.</div>
+    <div class="sdiv">Seleccionar Estado a Simular</div>
+    <div class="mgrid">
+      <button class="mbtn" onclick="simState('delta',this)"><span class="mi">💤</span><span class="mn">Delta</span><span class="mhz">Sueño profundo</span></button>
+      <button class="mbtn" onclick="simState('theta',this)"><span class="mi">🧘</span><span class="mn">Theta</span><span class="mhz">Meditación</span></button>
+      <button class="mbtn active" onclick="simState('alpha',this)"><span class="mi">😌</span><span class="mn">Alpha</span><span class="mhz">Relajado</span></button>
+      <button class="mbtn" onclick="simState('beta',this)"><span class="mi">🧠</span><span class="mn">Beta</span><span class="mhz">Concentrado</span></button>
+      <button class="mbtn" onclick="simState('gamma',this)"><span class="mi">⚡</span><span class="mn">Gamma</span><span class="mhz">Flow / Peak</span></button>
+      <button class="mbtn" onclick="simState('stress',this)"><span class="mi">😰</span><span class="mn">Estrés</span><span class="mhz">Beta elevado</span></button>
+    </div>
+    <div class="sdiv">Velocidad de Transición</div>
+    <div class="slrow"><span class="sllbl">Transición</span>
+      <input type="range" class="rc" min="1" max="30" step="1" value="5" id="sl-trans"
+        oninput="this.nextElementSibling.textContent=this.value+'s'">
+      <span class="sv">5s</span></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Señal EEG en Tiempo Real</div>
+    <canvas id="eeg-canvas" style="width:100%;height:160px;display:block;border-radius:6px;margin-bottom:14px"></canvas>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="padding:9px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:4px">CH1 (µV)</div>
+        <div id="ch1" style="font-size:15px;color:var(--cyan)">0.00</div>
+      </div>
+      <div style="padding:9px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:4px">CH2 (µV)</div>
+        <div id="ch2" style="font-size:15px;color:var(--blue)">0.00</div>
+      </div>
+      <div style="padding:9px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:4px">CH3 (µV)</div>
+        <div id="ch3" style="font-size:15px;color:var(--purple)">0.00</div>
+      </div>
+      <div style="padding:9px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--muted2);letter-spacing:1px;margin-bottom:4px">CH4 (µV)</div>
+        <div id="ch4" style="font-size:15px;color:var(--green)">0.00</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PANEL SESIONES
+════════════════════════════════════════ -->
+<div id="panel-sessions" class="panel">
+<div class="g21">
+  <div class="card">
+    <div class="ctitle">Historial</div>
+    <div id="hist-list"><p style="color:var(--muted2);font-size:11px">Cargando...</p></div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Sesión Activa</div>
+    <div id="timer-big">00:00</div>
+    <div style="font-size:10px;color:var(--muted2);letter-spacing:1px;text-align:center;margin-bottom:16px">DURACIÓN</div>
+    <div class="metric"><div class="mlbl">Estrés prom.</div>
+      <div class="mbar-w"><div class="mbar" id="avg-s" style="width:0%;background:var(--red)"></div></div>
+      <div class="mval" id="v-avg-s">—</div></div>
+    <div class="metric"><div class="mlbl">Enfoque prom.</div>
+      <div class="mbar-w"><div class="mbar" id="avg-f" style="width:0%;background:var(--cyan)"></div></div>
+      <div class="mval" id="v-avg-f">—</div></div>
+    <button id="sess-btn2" onclick="toggleSession()" style="width:100%;padding:12px;margin-top:12px;
+      background:linear-gradient(135deg,var(--blue),var(--purple));
+      border:none;border-radius:7px;color:#fff;font-family:'Orbitron',monospace;
+      font-size:10px;font-weight:700;letter-spacing:2px;cursor:pointer">
+      ▶ INICIAR SESIÓN</button>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PANEL CIENCIA
+════════════════════════════════════════ -->
+<div id="panel-info" class="panel">
+<div class="g2">
+  <div class="card">
+    <div class="ctitle">Neurociencia de las Ondas Cerebrales</div>
+    <div class="ibox"><strong>δ Delta (0.5–4 Hz)</strong><br>Sueño profundo sin sueños. Regeneración celular, liberación de hormona del crecimiento. Ondas de mayor amplitud y menor frecuencia. Ideal para recuperación y curación.</div>
+    <div class="ibox"><strong>θ Theta (4–8 Hz)</strong><br>Sueño ligero, meditación profunda, hipnosis, creatividad elevada. Estado hipnagógico. Alta producción de serotonina. Acceso al inconsciente.</div>
+    <div class="ibox"><strong>α Alpha (8–12 Hz)</strong><br>Relajación alerta. Estado ideal de aprendizaje y retención. Puente entre consciente e inconsciente. Flujo de ondas cuando cerramos los ojos.</div>
+    <div class="ibox"><strong>β Beta (12–30 Hz)</strong><br>Pensamiento activo, concentración, lógica, resolución de problemas. Estado de vigilia normal. Beta elevado se asocia con ansiedad y estrés.</div>
+    <div class="ibox"><strong>γ Gamma (30–80 Hz)</strong><br>Procesamiento cognitivo de alto nivel, integración de información, experiencias "peak". Meditadores expertos muestran gamma elevado de forma sostenida.</div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Tecnología NeuroWave AI</div>
+    <div class="ibox"><strong>Binaural Beats</strong><br>Al presentar 200 Hz en el oído izquierdo y 210 Hz en el derecho, el cerebro genera una oscilación de 10 Hz (alpha). Requiere audífonos estéreo para efecto completo.</div>
+    <div class="ibox"><strong>Afinación 432 Hz</strong><br>La frecuencia A4 estándar es 440 Hz (ISO 16). La afinación alternativa de 432 Hz usa el ratio 432/440 ≈ 0.9818 para ajustar todas las frecuencias. Popular en meditación y terapia sonora.</div>
+    <div class="ibox"><strong>Música Neuroadaptativa</strong><br>Algoritmo generativo procedural que adapta armonía (escala), tempo (BPM) y textura (capas activas) según el estado cognitivo detectado en tiempo real vía EEG.</div>
+    <div class="ibox"><strong>Biofeedback EEG</strong><br>Soporte para Muse EEG (vía Lab Streaming Layer) y OpenBCI. El simulador integrado genera señales sintéticas de alta fidelidad para pruebas sin hardware.</div>
+    <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:6px;
+      border:1px solid var(--border);font-size:10px;color:var(--muted2);line-height:2">
+      v2.1 Railway · FastAPI · Web Audio API<br>
+      WebSocket: <span id="ws-url" style="color:var(--cyan)">—</span>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- /#app -->
+<div id="notif"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+const q  = s => document.querySelector(s);
+const qa = s => document.querySelectorAll(s);
+const pct = v => Math.round(+v * 100) + '%';
+let _nt = null;
+function notify(m, dur=2800){
+  const el=q('#notif'); el.textContent=m; el.classList.add('show');
+  clearTimeout(_nt); _nt=setTimeout(()=>el.classList.remove('show'), dur);
+}
+function showP(id, btn){
+  qa('.panel').forEach(p=>p.classList.remove('active'));
+  qa('.tab').forEach(b=>b.classList.remove('active'));
+  q('#panel-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='sessions') loadHistory();
+}
+function customTuning(btn){
+  const hz=parseFloat(prompt('Frecuencia de afinación Hz (ejemplo: 432):','432'));
+  if(hz>100&&hz<2000){AE.setTuning(hz,btn);btn.textContent=hz+' Hz';}
+}
+function sbUpdate(){
+  q('#sb-beat').textContent=(q('#sl-beat')?.value||10)+' Hz';
+  q('#sb-car').textContent=(q('#sl-carrier')?.value||200)+' Hz';
+}
+
+// ══════════════════════════════════════════════════════
+// AUDIO ENGINE — 100% Web Audio API, NADA auto-inicia
+// ══════════════════════════════════════════════════════
+const AE = (() => {
+  let ctx, masterGain;
+  const amb = {};
+  let oscL, oscR, bbGain;
+  let bbOn=false, carrier=200, beat=10, tuning=432;
+
+  /* Noise buffers */
+  function mkPink(sec=6){
+    const n=ctx.sampleRate*sec,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for(let i=0;i<n;i++){const w=Math.random()*2-1;b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;
+      b2=.96900*b2+w*.153852;b3=.86650*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898;
+      d[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)/7;b6=w*.115926;}
+    return b;
+  }
+  function mkBrown(sec=6){
+    const n=ctx.sampleRate*sec,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+    let l=0;for(let i=0;i<n;i++){l=Math.max(-1,Math.min(1,l+(Math.random()*2-1)*.02));d[i]=l;}
+    return b;
+  }
+  function mkWhite(sec=3){
+    const n=ctx.sampleRate*sec,b=ctx.createBuffer(1,n,ctx.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<n;i++)d[i]=Math.random()*2-1; return b;
+  }
+
+  function loopNode(buf, gainVal=0, lpFreq=null){
+    const src=ctx.createBufferSource(), g=ctx.createGain();
+    src.buffer=buf; src.loop=true; g.gain.value=gainVal;
+    let last=src;
+    if(lpFreq){const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=lpFreq;src.connect(f);last=f;}
+    last.connect(g); g.connect(masterGain); src.start();
+    return {src,g};
+  }
+  function mkOcean(){
+    const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const src=ctx.createBufferSource();src.buffer=mkPink(8);src.loop=true;
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=600;
+    const lfo=ctx.createOscillator(),lg=ctx.createGain();
+    lfo.frequency.value=0.07;lg.gain.value=0.35;lfo.connect(lg);lg.connect(g.gain);
+    src.connect(lp);lp.connect(g);src.start();lfo.start();return{src,lfo,g};
+  }
+  function mkRain(){
+    const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const src=ctx.createBufferSource();src.buffer=mkPink(6);src.loop=true;
+    const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=2200;bp.Q.value=0.4;
+    src.connect(bp);bp.connect(g);src.start();return{src,g};
+  }
+  function mkForest(){
+    const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const src=ctx.createBufferSource();src.buffer=mkPink(6);src.loop=true;
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1200;
+    const lfo=ctx.createOscillator(),lg=ctx.createGain();
+    lfo.frequency.value=0.18;lg.gain.value=0.12;lfo.connect(lg);lg.connect(g.gain);
+    src.connect(lp);lp.connect(g);src.start();lfo.start();return{src,lfo,g};
+  }
+  function mkFire(){
+    const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const src=ctx.createBufferSource();src.buffer=mkBrown(6);src.loop=true;
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=380;
+    src.connect(lp);lp.connect(g);src.start();return{src,g};
+  }
+  function mkCosmos(){
+    const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const src=ctx.createBufferSource();src.buffer=mkPink(10);src.loop=true;
+    const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=180;
+    const lfo=ctx.createOscillator(),lg=ctx.createGain();
+    lfo.frequency.value=0.012;lg.gain.value=0.45;lfo.connect(lg);lg.connect(g.gain);
+    src.connect(lp);lp.connect(g);src.start();lfo.start();return{src,lfo,g};
+  }
+
+  return {
+    init(){
+      ctx=new(window.AudioContext||window.webkitAudioContext)();
+      masterGain=ctx.createGain();
+      masterGain.gain.value=0.7; // default 70%
+      masterGain.connect(ctx.destination);
+
+      /* ALL ambient nodes start at gain=0 — nothing plays automatically */
+      amb.rain  =mkRain();
+      amb.ocean =mkOcean();
+      amb.forest=mkForest();
+      amb.fire  =mkFire();
+      amb.white =loopNode(mkWhite(),0);
+      amb.pink  =loopNode(mkPink(),0);
+      amb.brown =loopNode(mkBrown(),0);
+      amb.cosmos=mkCosmos();
+
+      /* Binaural oscs — gain=0 until user activates toggle */
+      oscL=ctx.createOscillator();oscR=ctx.createOscillator();
+      oscL.type=oscR.type='sine';
+      oscL.frequency.value=carrier;
+      oscR.frequency.value=carrier+beat;
+      bbGain=ctx.createGain();bbGain.gain.value=0; // STARTS SILENT
+      const pL=ctx.createStereoPanner();pL.pan.value=-1;
+      const pR=ctx.createStereoPanner();pR.pan.value= 1;
+      oscL.connect(pL);pL.connect(bbGain);
+      oscR.connect(pR);pR.connect(bbGain);
+      bbGain.connect(masterGain);
+      oscL.start();oscR.start();
+      window._aeCtx=ctx; // expose for music module
+    },
+
+    /* Master volume — THIS is what the master slider controls */
+    setMaster(v){
+      if(!masterGain)return;
+      masterGain.gain.setTargetAtTime(+v, ctx.currentTime, 0.04);
+    },
+
+    toggleBB(on){
+      bbOn=on;
+      const vol=on?+(q('#sl-bbvol')?.value||0.35):0;
+      if(bbGain) bbGain.gain.setTargetAtTime(vol, ctx.currentTime, 0.3);
+      q('#lbl-bb').textContent=on?'Activado':'Desactivado — sube el toggle para activar';
+      q('#bb-panel').style.opacity=on?'1':'.35';
+      q('#bb-panel').style.pointerEvents=on?'all':'none';
+    },
+
+    setBBVol(v){if(bbOn&&bbGain) bbGain.gain.setTargetAtTime(v, ctx.currentTime, 0.1);},
+
+    setCarrier(hz){
+      carrier=hz;this._sync();
+      q('#sb-car').textContent=hz+' Hz';
+      this._updateSub();
+    },
+
+    setBeat(hz){
+      beat=hz;this._sync();
+      q('#sb-beat').textContent=hz+' Hz';
+    },
+
+    _sync(){
+      if(!oscL)return;
+      const r=tuning/440, now=ctx.currentTime;
+      oscL.frequency.setTargetAtTime(carrier*r, now, 0.4);
+      oscR.frequency.setTargetAtTime((carrier+beat)*r, now, 0.4);
+    },
+
+    _updateSub(){
+      const states={2:'Sueño profundo',6:'Meditación',10:'Relajado · Enfocado',18:'Concentración',40:'Flow · Gamma'};
+      const desc=states[beat]||beat+' Hz';
+      q('#state-sub').textContent=`${beat} Hz beat · ${carrier} Hz carrier\n${desc}`;
+    },
+
+    setWave(t,btn){
+      if(oscL) oscL.type=t;
+      if(oscR) oscR.type=t;
+      qa('.wtype').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    },
+
+    setTuning(hz,btn){
+      tuning=hz; this._sync();
+      qa('.pills .pill').forEach(p=>{if(p.closest('.pills'))p.classList.remove('active');});
+      if(btn){btn.classList.add('active');}
+      q('#sb-tun').textContent=hz+' Hz';
+      notify('Afinación: '+hz+' Hz');
+    },
+
+    setAmb(type,vol){
+      const node=amb[type];if(!node)return;
+      node.g.gain.setTargetAtTime(vol*0.48, ctx.currentTime, 0.25);
+    },
+
+    toggleConv(on){ notify(on?'Conversión 432 Hz activa':'Conversión desactivada'); this._sync(); },
+    setConvAmt(v){},
+
+    setMode(mode){
+      const c={sleep:{beat:2,carrier:120},meditate:{beat:6,carrier:180},
+        study:{beat:10,carrier:200},focus:{beat:18,carrier:220},flow:{beat:40,carrier:250}};
+      const cfg=c[mode];if(!cfg)return;
+      beat=cfg.beat; carrier=cfg.carrier;
+      this._sync(); this._updateSub();
+      q('#sl-beat').value=cfg.beat;
+      q('#sl-carrier').value=cfg.carrier;
+      q('#sl-beat').nextElementSibling.textContent=cfg.beat+'Hz';
+      q('#sl-carrier').nextElementSibling.textContent=cfg.carrier+'Hz';
+      sbUpdate();
+    },
+  };
+})();
+
+// ══════════════════════════════════════════════════════
+// MUSIC GENERATOR
+// ══════════════════════════════════════════════════════
+const MG = (() => {
+  let ctx,mg,filt;
+  let drones=[],pads=[];
+  let on=false,root=130,filt_hz=2000;
+  const scales={
+    lydian:[0,2,4,6,7,9,11], dorian:[0,2,3,5,7,9,10],
+    pentatonic:[0,2,4,7,9],  wholetone:[0,2,4,6,8,10], minor:[0,2,3,5,7,8,10]
+  };
+  let scale=scales.lydian;
+  const layers={drone:true,pad:true,arp:true};
+  function hz(r,s){return r*Math.pow(2,s/12);}
+  function osc(f,t='sine',v=0.1){
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=t;o.frequency.value=f;g.gain.value=v;
+    o.connect(g);g.connect(mg);o.start();return{o,g};
+  }
+  function buildDrones(){
+    drones.forEach(n=>{try{n.o.stop();}catch(e){}});drones=[];
+    if(!layers.drone)return;
+    drones.push(osc(root,'sine',.1));
+    drones.push(osc(root*1.5,'sine',.06));
+    drones.push(osc(root*2,'sine',.03));
+    drones.push(osc(root*1.501,'triangle',.015));
+  }
+  function buildPads(){
+    pads.forEach(n=>{try{n.o.stop();}catch(e){}});pads=[];
+    if(!layers.pad)return;
+    [0,2,4].forEach(si=>{
+      const semi=scale[si%scale.length];
+      pads.push(osc(hz(root,semi),'sine',.07));
+      pads.push(osc(hz(root,semi+12),'triangle',.03));
+    });
+  }
+  return {
+    bpm:70, complexity:0.5,
+    init(){
+      ctx=window._aeCtx;if(!ctx)return;
+      mg=ctx.createGain();mg.gain.value=0;
+      filt=ctx.createBiquadFilter();filt.type='lowpass';filt.frequency.value=2000;
+      mg.connect(filt);filt.connect(ctx.destination);
+    },
+    toggle(v){
+      if(!ctx){this.init();}
+      on=v;
+      mg.gain.setTargetAtTime(v?0.35:0, ctx.currentTime, 0.6);
+      if(v){buildDrones();buildPads();}
+    },
+    setVol(v){if(mg)mg.gain.setTargetAtTime(on?v:0,ctx.currentTime,.1);},
+    setRoot(v){root=v;if(on){buildDrones();buildPads();}},
+    setFilter(v){filt_hz=v;if(filt)filt.frequency.setTargetAtTime(v,ctx.currentTime,.2);},
+    setScale(name,btn){
+      scale=scales[name]||scales.lydian;
+      qa('#panel-music .pill').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      if(on)buildPads();
+    },
+    layer(l,v){layers[l]=v;if(on){buildDrones();buildPads();}},
+    adaptToState(state){
+      const bpms={delta:40,theta:55,study:70,alpha:70,focus:85,beta:85,flow:100,gamma:100};
+      this.bpm=bpms[state]||70;
+      q('#sl-bpm').value=this.bpm;
+      q('#sl-bpm').nextElementSibling.textContent=this.bpm;
+    },
+  };
+})();
+
+// ══════════════════════════════════════════════════════
+// AI ENGINE
+// ══════════════════════════════════════════════════════
+const AI = {
+  enabled:true, speed:0.3, _last:null,
+  toggle(v){this.enabled=v;},
+  process(d){
+    if(!this.enabled)return;
+    if(d.state!==this._last){
+      this._last=d.state;
+      if(q('#tog-bb').checked){
+        const bm={delta:2,theta:6,alpha:10,beta:18,gamma:40};
+        const nb=bm[d.state]||10;
+        AE.setBeat(nb);
+        q('#sl-beat').value=nb;
+        q('#sl-beat').nextElementSibling.textContent=nb+'Hz';
+      }
+      MG.adaptToState(d.state);
+      q('#ai-log').textContent=`→ Detectado ${d.state.toUpperCase()} · ajustando beat y tempo`;
+    }
+    if(d.stress>0.65) q('#ai-log').textContent=`⚠ Estrés ${Math.round(d.stress*100)}% → reforzando alpha`;
+    else if(d.focus>0.70) q('#ai-log').textContent=`✓ Enfoque ${Math.round(d.focus*100)}% · ${d.state.toUpperCase()} estable`;
+  },
+};
+
+// ══════════════════════════════════════════════════════
+// VISUALIZERS
+// ══════════════════════════════════════════════════════
+let vt=0;
+const bkeys=['delta','theta','alpha','beta','gamma'];
+const bcols=['#9c6dff','#4d9fff','#00d4f0','#00e676','#ffd740'];
+const bpow={delta:.08,theta:.15,alpha:.55,beta:.18,gamma:.04};
+const boff=bkeys.map(()=>Math.random()*Math.PI*2);
+let _ringColor='#00d4f0';
+
+function initViz(){
+  const cv=q('#viz-canvas'),c=cv.getContext('2d');
+  function rsz(){cv.width=cv.parentElement.offsetWidth-36;cv.height=140;}
+  rsz();window.addEventListener('resize',rsz);
+  function draw(){requestAnimationFrame(draw);vt+=.018;
+    const W=cv.width,H=cv.height;c.clearRect(0,0,W,H);
+    c.fillStyle='#07101f';c.fillRect(0,0,W,H);
+    const bw=W/(bkeys.length*2.4),gap=bw*1.4,tot=bkeys.length*(bw+gap)-gap,sx=(W-tot)/2;
+    bkeys.forEach((k,i)=>{
+      const p=bpow[k]||.05,anim=.85+.15*Math.sin(vt*1.8+boff[i]);
+      const h=Math.max(5,(H-24)*p*2.1*anim),x=sx+i*(bw+gap),y=H-h-8,col=bcols[i];
+      c.save();c.shadowColor=col;c.shadowBlur=16;
+      const gr=c.createLinearGradient(0,y+h,0,y);gr.addColorStop(0,col+'18');gr.addColorStop(1,col+'cc');
+      c.fillStyle=gr;c.beginPath();c.roundRect(x,y,bw,h,3);c.fill();
+      c.fillStyle=col;c.beginPath();c.arc(x+bw/2,y+3,3,0,Math.PI*2);c.fill();
+      c.restore();
+    });
+    c.strokeStyle='rgba(0,229,255,.05)';c.lineWidth=1.5;c.beginPath();
+    for(let x=0;x<=W;x+=3){const y=H/2+10*Math.sin(vt*1.1+x*.04);x===0?c.moveTo(x,y):c.lineTo(x,y);}
+    c.stroke();
+  }
+  draw();
+}
+
+function initRing(){
+  const cv=q('#ring-canvas'),c=cv.getContext('2d');let rt=0;
+  const sc={delta:'#9c6dff',theta:'#4d9fff',alpha:'#00d4f0',beta:'#00e676',gamma:'#ffd740'};
+  window._setRingColor=s=>{_ringColor=sc[s]||'#00d4f0';};
+  function draw(){requestAnimationFrame(draw);rt+=.04;
+    const W=cv.width,H=cv.height,cx=W/2,cy=H/2,r=26;
+    c.clearRect(0,0,W,H);
+    const pl=.12+.08*Math.sin(rt*2);
+    c.beginPath();c.arc(cx,cy,r+7+pl*12,0,Math.PI*2);
+    c.strokeStyle=_ringColor+Math.round(pl*200).toString(16).padStart(2,'0');
+    c.lineWidth=1;c.stroke();
+    c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.strokeStyle=_ringColor;c.lineWidth=2.5;c.stroke();
+    c.beginPath();c.arc(cx,cy,r-7,0,Math.PI*2);c.fillStyle='#07101f';c.fill();
+    const tx=cx+(r-3)*Math.cos(rt),ty=cy+(r-3)*Math.sin(rt);
+    c.beginPath();c.arc(tx,ty,2.5,0,Math.PI*2);c.fillStyle=_ringColor;c.fill();
+  }
+  draw();
+}
+
+function initMusicViz(){
+  const cv=q('#music-canvas');if(!cv)return;
+  const c=cv.getContext('2d');let mt=0;
+  function rsz(){cv.width=cv.parentElement.offsetWidth-36;cv.height=80;}
+  rsz();window.addEventListener('resize',rsz);
+  function draw(){requestAnimationFrame(draw);mt+=.02;
+    const W=cv.width,H=cv.height;c.clearRect(0,0,W,H);
+    c.fillStyle='#03060d';c.fillRect(0,0,W,H);
+    ['#00d4f0','#2979ff','#9c27b0'].forEach((col,i)=>{
+      c.strokeStyle=col+(i===0?'99':'44');c.lineWidth=1.5;c.beginPath();
+      for(let x=0;x<=W;x+=2){const a=H*.28*(1-i*.2);const y=H/2+a*Math.sin(mt*(1+i*.3)+x*.025*(1+i*.1));x===0?c.moveTo(x,y):c.lineTo(x,y);}
+      c.stroke();
+    });
+  }
+  draw();
+}
+
+function initEEGCanvas(){
+  const cv=q('#eeg-canvas');if(!cv)return;
+  const c=cv.getContext('2d');const hist=[];let t=0;
+  function rsz(){cv.width=cv.parentElement.offsetWidth-36;cv.height=160;}
+  rsz();window.addEventListener('resize',rsz);
+  function draw(){requestAnimationFrame(draw);t+=.03;
+    const W=cv.width,H=cv.height;c.clearRect(0,0,W,H);
+    c.fillStyle='#07101f';c.fillRect(0,0,W,H);
+    c.strokeStyle='#0e2040';c.lineWidth=1;
+    for(let i=1;i<4;i++){c.beginPath();c.moveTo(0,H/4*i);c.lineTo(W,H/4*i);c.stroke();}
+    const val=bpow.alpha*60*Math.sin(t*9)+bpow.beta*30*Math.sin(t*15)+H/2;
+    hist.push(val);if(hist.length>220)hist.shift();
+    c.strokeStyle='var(--cyan)';c.lineWidth=1.5;c.shadowColor='var(--cyan)';c.shadowBlur=4;
+    c.beginPath();hist.forEach((y,i)=>{const x=i/hist.length*W;i===0?c.moveTo(x,y):c.lineTo(x,y);});
+    c.stroke();c.shadowBlur=0;
+  }
+  draw();
+}
+
+// ══════════════════════════════════════════════════════
+// WEBSOCKET
+// ══════════════════════════════════════════════════════
+function connectWS(){
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  const url=`${proto}//${location.host}/ws/eeg`;
+  q('#ws-url').textContent=url;
+  const ws=new WebSocket(url);
+  ws.onopen=()=>{q('#wdot').className='wdot on';q('#wlbl').textContent='EN LÍNEA';};
+  ws.onmessage=e=>{const d=JSON.parse(e.data);if(d.type==='eeg')handleEEG(d);};
+  ws.onclose=()=>{q('#wdot').className='wdot wait';q('#wlbl').textContent='RECONECTANDO';setTimeout(connectWS,3000);};
+  ws.onerror=()=>ws.close();
+}
+
+const SC={delta:'var(--dc)',theta:'var(--tc)',alpha:'var(--ac)',beta:'var(--bc)',gamma:'var(--gc)'};
+const SD={delta:'Sueño profundo · Regeneración',theta:'Meditación · Creatividad',
+  alpha:'Relajado · Aprendizaje',beta:'Activo · Concentrado',gamma:'Flow · Peak'};
+
+let _ssArr=[], _sfArr=[];
+
+function handleEEG(d){
+  window._curState=d.state;
+  q('#state-name').textContent=d.state.toUpperCase();
+  q('#state-name').style.color=SC[d.state]||'var(--ac)';
+  window._setRingColor?.(d.state);
+  q('#state-sub').textContent=`${d.band_powers?.[d.state]?.toFixed(3)||'—'} · ${SD[d.state]||''}`;
+  setBar('ms','vs',d.stress);setBar('mf','vf',d.focus);setBar('mm','vm',d.meditation);
+
+  if(d.band_powers){
+    const bp=d.band_powers;
+    const dom=Object.keys(bp).reduce((a,b)=>bp[a]>bp[b]?a:b);
+    bkeys.forEach(k=>{
+      bpow[k]+=(( bp[k]||0)-bpow[k])*.12;
+      const el=q('#bv-'+k);if(el)el.textContent=bpow[k].toFixed(3);
+      q('#bl-'+k)?.classList.toggle('dom',k===dom);
+      q('#fc-'+k)?.classList.toggle('dom',k===dom);
+    });
+  }
+  if(d.channels) d.channels.slice(0,4).forEach((v,i)=>{const el=q('#ch'+(i+1));if(el)el.textContent=v.toFixed(2);});
+  if(_ssArr.length>0){
+    _ssArr.push(d.stress);_sfArr.push(d.focus);
+    const as=_ssArr.reduce((a,b)=>a+b)/_ssArr.length;
+    const af=_sfArr.reduce((a,b)=>a+b)/_sfArr.length;
+    q('#avg-s').style.width=pct(as);q('#v-avg-s').textContent=pct(as);
+    q('#avg-f').style.width=pct(af);q('#v-avg-f').textContent=pct(af);
+  }
+  AI.process(d);
+}
+function setBar(bid,vid,v){
+  const p=Math.round(v*100);q('#'+bid).style.width=p+'%';q('#'+vid).textContent=p+'%';
+}
+
+// ══════════════════════════════════════════════════════
+// SESSIONS
+// ══════════════════════════════════════════════════════
+let _sessActive=false,_sessStart=null,_sessTick=null;
+
+async function toggleSession(){
+  const mode=q('.mbtn.active')?.dataset.mode||'study';
+  const btns=[q('#sess-btn'),q('#sess-btn2')];
+  if(!_sessActive){
+    await fetch('/api/sessions/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode})});
+    _sessActive=true;_sessStart=Date.now();_ssArr=[];_sfArr=[];
+    btns.forEach(b=>{if(b){b.textContent='⏹ DETENER SESIÓN';b.classList.add('stop');}});
+    _sessTick=setInterval(()=>{
+      const s=Math.floor((Date.now()-_sessStart)/1000);
+      const t=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+      q('#sb-sess').textContent=t;q('#timer-big').textContent=t;
+    },1000);
+    notify('▶ Sesión iniciada');
+  } else {
+    clearInterval(_sessTick);
+    const r=await fetch('/api/sessions/end',{method:'POST'});
+    const d=await r.json().catch(()=>({}));
+    _sessActive=false;
+    btns.forEach(b=>{if(b){b.textContent='▶ INICIAR SESIÓN';b.classList.remove('stop');}});
+    q('#sb-sess').textContent='—';q('#timer-big').textContent='00:00';
+    notify(`✓ Sesión: ${d.duration_min||0} min · Enfoque: ${Math.round((d.avg_focus||0)*100)}%`);
+    loadHistory();
+  }
+}
+
+async function loadHistory(){
+  try{
+    const r=await fetch('/api/sessions/history?limit=10');
+    const d=await r.json();
+    const el=q('#hist-list');
+    if(!d.sessions?.length){el.innerHTML='<p style="color:var(--muted2);font-size:11px">No hay sesiones aún</p>';return;}
+    el.innerHTML=d.sessions.map(s=>`
+      <div class="hrow">
+        <div class="hmode">${(s.mode||'—').toUpperCase()}</div>
+        <div class="hstat">Estrés <span>${Math.round((s.avg_stress||0)*100)}%</span> · Enfoque <span>${Math.round((s.avg_focus||0)*100)}%</span> · <span>${s.dominant_state||'—'}</span></div>
+        <div class="hdur">${s.duration_min||0} min</div>
+      </div>`).join('');
+  }catch(e){q('#hist-list').innerHTML='<p style="color:var(--muted2);font-size:11px">Error</p>';}
+}
+
+function simState(state, btn){
+  const t=+(q('#sl-trans')?.value||5);
+  fetch('/api/eeg/simulate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({state:state==='stress'?'beta':state,transition_seconds:t})}).catch(()=>{});
+  qa('#panel-eeg .mbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  notify('EEG → simulando '+state.toUpperCase());
+}
+
+// ══════════════════════════════════════════════════════
+// MODE SELECTOR
+// ══════════════════════════════════════════════════════
+function initModes(){
+  const modeNames={sleep:'Dormir',meditate:'Meditar',study:'Estudiar',focus:'Enfoque',flow:'Flow/Gamma',custom:'Manual'};
+  qa('.mbtn[data-mode]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      qa('.mbtn[data-mode]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode=btn.dataset.mode;
+      if(mode!=='custom') AE.setMode(mode);
+      MG.adaptToState(mode);
+      q('#sb-mode').textContent=modeNames[mode]||mode;
+      if(mode!=='custom'){
+        const sm={sleep:'delta',meditate:'theta',study:'alpha',focus:'beta',flow:'gamma'};
+        fetch('/api/eeg/simulate',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({state:sm[mode]||'alpha',transition_seconds:5})}).catch(()=>{});
+      }
+      notify('Modo: '+(modeNames[mode]||mode));
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// BOOT — called ONLY when user clicks the button
+// ══════════════════════════════════════════════════════
+function boot(){
+  q('#overlay').style.display='none';
+
+  AE.init();          // init audio context — nothing plays yet
+  MG.init();          // init music module — also silent
+  initViz();
+  initRing();
+  initMusicViz();
+  initEEGCanvas();
+  initModes();
+  connectWS();
+
+  notify('✓ Sistema iniciado — todos los controles en 0');
+}
+</script>
+</body>
+</html>
