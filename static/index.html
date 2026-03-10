@@ -693,12 +693,15 @@ const AE = (() => {
     return {src,g};
   }
   function mkOcean(){
+    // g = user slider control (gain=0, never touched by LFO)
     const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    // inner = LFO modulation target, independent from slider
+    const inner=ctx.createGain();inner.gain.value=0.6;inner.connect(g);
     const src=ctx.createBufferSource();src.buffer=mkPink(8);src.loop=true;
     const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=600;
     const lfo=ctx.createOscillator(),lg=ctx.createGain();
-    lfo.frequency.value=0.07;lg.gain.value=0.35;lfo.connect(lg);lg.connect(g.gain);
-    src.connect(lp);lp.connect(g);src.start();lfo.start();return{src,lfo,g};
+    lfo.frequency.value=0.07;lg.gain.value=0.3;lfo.connect(lg);lg.connect(inner.gain);
+    src.connect(lp);lp.connect(inner);src.start();lfo.start();return{src,lfo,g};
   }
   function mkRain(){
     const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
@@ -708,11 +711,12 @@ const AE = (() => {
   }
   function mkForest(){
     const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const inner=ctx.createGain();inner.gain.value=0.7;inner.connect(g);
     const src=ctx.createBufferSource();src.buffer=mkPink(6);src.loop=true;
     const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1200;
     const lfo=ctx.createOscillator(),lg=ctx.createGain();
-    lfo.frequency.value=0.18;lg.gain.value=0.12;lfo.connect(lg);lg.connect(g.gain);
-    src.connect(lp);lp.connect(g);src.start();lfo.start();return{src,lfo,g};
+    lfo.frequency.value=0.18;lg.gain.value=0.12;lfo.connect(lg);lg.connect(inner.gain);
+    src.connect(lp);lp.connect(inner);src.start();lfo.start();return{src,lfo,g};
   }
   function mkFire(){
     const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
@@ -722,11 +726,12 @@ const AE = (() => {
   }
   function mkCosmos(){
     const g=ctx.createGain();g.gain.value=0;g.connect(masterGain);
+    const inner=ctx.createGain();inner.gain.value=0.5;inner.connect(g);
     const src=ctx.createBufferSource();src.buffer=mkPink(10);src.loop=true;
     const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=180;
     const lfo=ctx.createOscillator(),lg=ctx.createGain();
-    lfo.frequency.value=0.012;lg.gain.value=0.45;lfo.connect(lg);lg.connect(g.gain);
-    src.connect(lp);lp.connect(g);src.start();lfo.start();return{src,lfo,g};
+    lfo.frequency.value=0.012;lg.gain.value=0.35;lfo.connect(lg);lg.connect(inner.gain);
+    src.connect(lp);lp.connect(inner);src.start();lfo.start();return{src,lfo,g};
   }
 
   return {
